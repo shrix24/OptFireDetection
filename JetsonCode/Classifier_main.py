@@ -6,6 +6,7 @@ from Classifier_Processing import Window_Wavelet_Features
 from sklearn.cluster import DBSCAN
 import time
 import logging
+from signalrcore.hub_connection_builder import HubConnectionBuilder
 
 class Classifier_Detect:
     def __init__(self) -> None:
@@ -167,8 +168,8 @@ class Classifier_Detect:
 
         self.frame_count += 1
         
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     # vision_module = ClassifierDetect()

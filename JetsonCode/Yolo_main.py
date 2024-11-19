@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from ultralytics import YOLO
+from utils import yolo2pixel
 
 
 class YOLO_Detect:

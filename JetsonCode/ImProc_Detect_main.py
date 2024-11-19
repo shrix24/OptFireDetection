@@ -142,7 +142,6 @@ class ImProc_Detect:
 
             contours, _ = cv2.findContours(D_result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             areas = []
-            global centroid
 
             if contours:
                 for contour in contours:

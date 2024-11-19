@@ -247,12 +247,29 @@ def socket_listener_main():
                     client_socket.send(response.encode())
                     frame = np.array(frame)
                     og_frame = np.array(og_frame)
+
+                    # img_coord = {
+                    #     "x": global_vars.img_coords[0],
+                    #     "y": global_vars.img_coords[1]
+                    # }
+
+                    # locationGPS = {
+                    #     "LatDeg": global_vars.gps_position[0],
+                    #     "LngDeg": global_vars.gps_position[1],
+                    #     "AltM": global_vars.gps_position[2]
+                    # }
+
+
+                    # imgCoordString = json.dumps(img_coord)
+                    # locationGPSString = json.dumps(locationGPS)
+
                     # frame = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
                     a = pickle.dumps(frame)
                     b = pickle.dumps(og_frame)
                     c = a+b
 
                     composite_frame = struct.pack("Q", len(c))+struct.pack("Q", len(a))+struct.pack("Q", len(b))+c
+
                     client_socket.sendall(composite_frame)
                     # message_frame = struct.pack("Q",len(a))+a
                     # message_og_frame = struct.pack("Q", len(b))+b

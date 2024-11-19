@@ -30,7 +30,7 @@ class YOLO_Detect:
 
         # Write the annotated frame to the output video
         # output_video.write(annotated_frame)
-        
+        # pixel_coords = 
         # Display the frame (optional)
         # cv2.imshow('YOLO Detection', annotated_frame)
         self.frame_count += 1

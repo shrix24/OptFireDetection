@@ -18,7 +18,7 @@ class Globals():
         self.error_information = "\n"
         self.seperator = "\n"
         # IP for video server and jetson IP address
-        self.IP_SERVER = "http://192.168.134.155:9000"
+        self.IP_SERVER = "http://127.0.0.1:8008"
         self.IP_JETSON = "192.168.134.242"
         self.IP_PLATFORM = "http://127.0.0.1:5000"
     

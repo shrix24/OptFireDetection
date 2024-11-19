@@ -16,6 +16,7 @@ import json
 import cv2
 import pickle
 import struct
+from coord_converter_v2 import Image2World
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -256,53 +257,6 @@ class FireControlPanel(customtkinter.CTk):
             # global counter_images
             try:
                 self.image_request_update()
-                # image_exists = folder_images_detection + "\img" + str(counter_images) + ".png"
-                # # print(image_exists)
-                # if os.path.exists(image_exists) and self.switch_activation.get() == "on":
-                #     image_original = folder_images_original + "\img" + str(counter_images) + ".png"
-                #     imgLogo = Image.open(image_exists)
-                #     imgLogo_original = Image.open(image_original)
-
-                #     # let's upscale the image using new  width and height
-                #     up_width = int(self.screen_width / 2)
-                #     up_height = int(self.screen_height / 2 + self.screen_height / 8)
-                #     up_points = (up_width, up_height)
-                #     imgLogo_1 = imgLogo.resize(up_points)
-                #     imgLogo_2 = imgLogo_original.resize(up_points)
-
-                #     w, h = imgLogo_1.size
-                #     self.bg_imageLogos = customtkinter.CTkImage(imgLogo_1, size=(w, h))
-                #     self.bg_imageLogos_2 = customtkinter.CTkImage(imgLogo_2, size=(w, h))
-                #     self.Thermal_Image_Label = customtkinter.CTkLabel(self.scrollable_frame_main, text=" ",
-                #                                                     image=self.bg_imageLogos, bg_color="#242424")
-                #     self.Thermal_Image_Label.grid(row=0, column=0, padx=(5, 0), pady=(0, 0), sticky="nsew", rowspan=2)
-                #     self.Original_Image_Label = customtkinter.CTkLabel(self.scrollable_frame_main,
-                #                                                     text=" ",
-                #                                                     image=self.bg_imageLogos_2, bg_color="#242424")
-                #     self.Original_Image_Label.grid(row=0, column=1, padx=(10, 5), pady=(0, 0), sticky="nsew", rowspan=2)
-                #     my_font = customtkinter.CTkFont(family="Italic", size=25)
-                #     # self.button_detection = customtkinter.CTkButton(self.tabview.tab(self.tab_activation), text="Detection",
-                #     #                                                 font=my_font,
-                #     #                                                 fg_color="green", border_width=4,
-                #     #                                                 text_color=("gray10", "#DCE4EE"), state="disabled")
-                #     # self.button_detection.grid(row=2, column=0, padx=(10, 10), pady=(10, 0), rowspan=1, sticky='W')
-
-                # else:
-                #     imgLogo = Image.open(resource_path2('logo2.png'))
-                #     # let's upscale the image using new  width and height
-                #     up_width = int(self.screen_width / 2)
-                #     up_height = int(self.screen_height / 2 + self.screen_height / 8)
-                #     up_points = (up_width, up_height)
-                #     imgLogo_1 = imgLogo.resize(up_points)
-                #     w, h = imgLogo_1.size
-                #     self.bg_imageLogos = customtkinter.CTkImage(imgLogo_1, size=(w, h))
-                #     self.Thermal_Image_Label = customtkinter.CTkLabel(self.scrollable_frame_main, text="Processed Image",
-                #                                                     image=self.bg_imageLogos, bg_color="#242424")
-                #     self.Thermal_Image_Label.grid(row=0, column=0, padx=(5, 0), pady=(0, 0), sticky="nsew", rowspan=2)
-                #     self.Original_Image_Label = customtkinter.CTkLabel(self.scrollable_frame_main,
-                #                                                     text="Original Image with Bounding Boxes",
-                #                                                     image=self.bg_imageLogos, bg_color="#242424")
-                #     self.Original_Image_Label.grid(row=0, column=1, padx=(10, 5), pady=(0, 0), sticky="nsew", rowspan=2)
                 self.after(500, self.start_update_function)  # run itself again after 1000 ms
             except:
                 self.after(500, self.start_update_function)
@@ -362,17 +316,20 @@ class FireControlPanel(customtkinter.CTk):
         self.sendOnBoard()
         if self.success:
             tkmb.showinfo("Vision Module", "Vision Module is now active!")
+        else:
+            print("Something went wrong!")
+            self.reconnect_to_board = 1
 
     def toggle_all(self):
         if self.switch_all_var.get() == "off":
-            # self.payload = {"data": "TERMINATION," + "OFF"}
-            # self.sendOnBoard()
-            # print(self.data)
+            self.payload = {"data": "TERMINATION," + "OFF"}
+            self.sendOnBoard()
+            print(self.data)
             sys.exit()
         elif self.switch_all_var.get() == "on":
-            # self.payload = {"data": "START," + "YES"}
-            # self.sendOnBoard()
-            # print(self.data)
+            self.payload = {"data": "START," + "YES"}
+            self.sendOnBoard()
+            print(self.data)
             self.start_update = 1
 
     def coordinates(self):
@@ -464,6 +421,7 @@ class FireControlPanel(customtkinter.CTk):
         self.payload = {"data": "IMG," + "S"}
         self.sendOnBoard()
         print("Image Request Handshake: ", self.success)
+
         if self.data == "ImageSend":
             while len(data_img) < payload_size:
                 packet = self.client_socket.recv(8 * 1024)
@@ -474,6 +432,7 @@ class FireControlPanel(customtkinter.CTk):
             msg_size = struct.unpack("Q", packed_msg_size)[0]
             frame_size = struct.unpack("Q", packed_msg_size)[1]
             og_frame_size = struct.unpack("Q", packed_msg_size)[2]
+
             while len(data_img) < msg_size:
                 data_img += self.client_socket.recv(8 * 1024)
             
@@ -515,26 +474,6 @@ class FireControlPanel(customtkinter.CTk):
             self.Original_Image_Label.grid(row=0, column=1, padx=(20, 0), pady=(0, 0), sticky="nsew", rowspan=2)
             self.flag_image_transmission = 0
 
-            # frame_data = data_img[:msg_size]
-            # data_img = data_img[msg_size:]
-            # frame = pickle.loads(frame_data)
-            # cuu_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-            # filename = 'some_image' + cuu_time + '.jpg'
-            # full_path = os.path.join(self.directory_images_derived, filename)
-            # cv2.imwrite(full_path, frame)
-            # img = cv2.imread(full_path)
-            # img1 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            # up_width = 800
-            # up_height = 640
-            # up_points = (up_width, up_height)
-            # resized_up = cv2.resize(img1, up_points, interpolation=cv2.INTER_LINEAR)
-            # imgLogo_1 = Image.fromarray(resized_up)
-            # w, h = imgLogo_1.size
-            # self.bg_imageLogos = customtkinter.CTkImage(imgLogo_1, size=(w, h))
-            # self.bg_imageLogos_label = customtkinter.CTkLabel(self.scrollable_frame_main, text=" ",
-            #                                                   image=self.bg_imageLogos, bg_color="#242424")
-            # self.bg_imageLogos_label.grid(row=0, column=0, padx=(20, 0), pady=(0, 0), sticky="nsew", rowspan=2)
-            # self.flag_image_transmission = 0
         # self.after(10, self.image_request_update())  # run itself again after 1000 ms
 
 if __name__ == "__main__":

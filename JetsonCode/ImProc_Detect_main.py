@@ -3,7 +3,6 @@ import numpy as np
 from ImProc_Detect_funcs import ImageProcessor
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 import time
-import requests
 import logging
 
 class ImProc_Detect:
@@ -94,75 +93,76 @@ class ImProc_Detect:
         # output = cv2.VideoWriter(output_path, fourcc, 24, (500, 500))
 
         self.frame_count = 0
-        original_frame = raw_frame.copy()
-        frame = raw_frame
-        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = cv2.resize(frame, (self.frame_size, self.frame_size), cv2.INTER_AREA)
-        cv2.imshow("Original Frame", frame)
-        ImProc = ImageProcessor(frame)
-        ImProc.preprocessor()
 
-        ImProc.vbi_idx()
-        # cv2.imshow("VBI", vbi)
-        ImProc.fi_idx().astype(np.uint8)
-        # cv2.imshow("FI", fi)
-        ImProc.ffi_idx(self.alpha).astype(np.uint8)
-        # cv2.imshow("FFI", ffi)
-        ImProc.calc_tf(self.alpha)
+        if self.frame_count%30==0 or self.frame_count==0:
+            original_frame = raw_frame.copy()
+            frame = raw_frame
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, (self.frame_size, self.frame_size), cv2.INTER_AREA)
+            cv2.imshow("Original Frame", frame)
+            ImProc = ImageProcessor(frame)
+            ImProc.preprocessor()
 
-        ImProc.ffi_binarize()
+            ImProc.vbi_idx()
+            # cv2.imshow("VBI", vbi)
+            ImProc.fi_idx().astype(np.uint8)
+            # cv2.imshow("FI", fi)
+            ImProc.ffi_idx(self.alpha).astype(np.uint8)
+            # cv2.imshow("FFI", ffi)
+            ImProc.calc_tf(self.alpha)
 
-        ImProc.erosion().astype(np.uint8)
-        ImProc.dilation().astype(np.uint8)
-        ffi_blurred = ImProc.blur().astype(np.uint8)
-        D_f = cv2.bitwise_and(frame, frame, mask=ffi_blurred)
-        # cv2.imshow("Fire Area", ffi_dilated)
+            ImProc.ffi_binarize()
 
-        # Apply color rules
-        rule1_result = ImProc.rule_1(self.beta).astype(np.uint8)
-        # cv2.imshow("Rule 1", rule1_result)
-        rule2_result = ImProc.rule_2(self.R_thresh, self.B_thresh).astype(np.uint8)
-        # cv2.imshow("Rule 2", rule2_result)
-        rule3_result = ImProc.rule_3().astype(np.uint8)
-        # cv2.imshow("Rule 3", rule3_result)
-        D_s = cv2.bitwise_and(rule1_result, rule2_result).astype(np.uint8)
-        D_s = cv2.bitwise_and(rule3_result, D_s).astype(np.uint8)
-        # cv2.imshow("Smoke Area", D_s)
+            ImProc.erosion().astype(np.uint8)
+            ImProc.dilation().astype(np.uint8)
+            ffi_blurred = ImProc.blur().astype(np.uint8)
+            D_f = cv2.bitwise_and(frame, frame, mask=ffi_blurred)
+            # cv2.imshow("Fire Area", ffi_dilated)
 
-        D_fs_bin = cv2.bitwise_or(ffi_blurred, D_s).astype(np.uint8)
-        D_fs = cv2.bitwise_and(frame, frame, mask=D_fs_bin).astype(np.uint8)
-        # cv2.imshow("Fire Area Final", D_fs)
+            # Apply color rules
+            rule1_result = ImProc.rule_1(self.beta).astype(np.uint8)
+            # cv2.imshow("Rule 1", rule1_result)
+            rule2_result = ImProc.rule_2(self.R_thresh, self.B_thresh).astype(np.uint8)
+            # cv2.imshow("Rule 2", rule2_result)
+            rule3_result = ImProc.rule_3().astype(np.uint8)
+            # cv2.imshow("Rule 3", rule3_result)
+            D_s = cv2.bitwise_and(rule1_result, rule2_result).astype(np.uint8)
+            D_s = cv2.bitwise_and(rule3_result, D_s).astype(np.uint8)
+            # cv2.imshow("Smoke Area", D_s)
 
-        E_result = ImProc.wavelet_transform(D_fs, frame)
-        # cv2.imshow("Wavelet Result", E_result)
+            D_fs_bin = cv2.bitwise_or(ffi_blurred, D_s).astype(np.uint8)
+            D_fs = cv2.bitwise_and(frame, frame, mask=D_fs_bin).astype(np.uint8)
+            # cv2.imshow("Fire Area Final", D_fs)
 
-        D_result = cv2.bitwise_and(D_fs_bin, E_result).astype(np.uint8)
-        final_result = cv2.bitwise_and(frame, frame, mask=D_result)
+            E_result = ImProc.wavelet_transform(D_fs, frame)
+            # cv2.imshow("Wavelet Result", E_result)
 
-        contours, _ = cv2.findContours(D_result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        areas = []
-        global centroid
+            D_result = cv2.bitwise_and(D_fs_bin, E_result).astype(np.uint8)
+            final_result = cv2.bitwise_and(frame, frame, mask=D_result)
 
-        if contours:
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area < self.contour_area:
-                    areas.append(area)
-                    continue
-                x, y, w, h = cv2.boundingRect(contour)
-                frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+            contours, _ = cv2.findContours(D_result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            areas = []
+            global centroid
 
-            if areas:
-                areas = np.array(areas)
-                max_area_idx = np.argmax(areas)
-                x_m, y_m, w_m, h_m = cv2.boundingRect(contours[max_area_idx])
-                centroid = (x_m + w_m/2, y_m + h_m/2)
-                # print(centroid)
-            
-        cv2.imshow("Final Result", final_result)
-        cv2.imshow("Detections", frame)
+            if contours:
+                for contour in contours:
+                    area = cv2.contourArea(contour)
+                    if area < self.contour_area:
+                        areas.append(area)
+                        continue
+                    x, y, w, h = cv2.boundingRect(contour)
+                    frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
 
-        if self.frame_count%30==0:
+                if areas:
+                    areas = np.array(areas)
+                    max_area_idx = np.argmax(areas)
+                    x_m, y_m, w_m, h_m = cv2.boundingRect(contours[max_area_idx])
+                    centroid = (x_m + w_m/2, y_m + h_m/2)
+                    # print(centroid)
+                
+            # cv2.imshow("Final Result", final_result)
+            # cv2.imshow("Detections", frame)
+
             self.og_image_to_transmit = original_frame
             self.image_to_transmit = frame
             self.img_coords = centroid

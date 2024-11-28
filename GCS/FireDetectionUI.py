@@ -443,10 +443,6 @@ class FireControlPanel(customtkinter.CTk):
             self.client_socket.send(json_data.encode())
             self.success = self.client_socket.recv(1024).decode()
             self.response = self.client_socket.recv(1024).decode()
-            # self.enqueued_sendOnBoard()
-            # self.sendOnBoard()
-            # print(self.data)
-            # self.on_close()
             sys.exit()
         elif self.switch_all_var.get() == "on":
             self.payload = {"data": "INITIALIZE," + "YES"}
@@ -456,10 +452,7 @@ class FireControlPanel(customtkinter.CTk):
             self.response = self.client_socket.recv(1024).decode()
             self.img_update_func = threading.Thread(target=self.image_update)
             self.img_update_func.start()
-            # self.enqueued_sendOnBoard()
-            # self.sendOnBoard()
-            # print(self.data)
-
+            
     def coordinates(self):
         if self.text_box_longtitude.get() != "" and self.text_box_lat != "":
             subject = 'Fire detection module'
@@ -637,6 +630,7 @@ class FireControlPanel(customtkinter.CTk):
                     img_coords = pickle.loads(coords_stream)
                     gps_pos = pickle.loads(gps_pos_stream)
                     uav_attitude = pickle.loads(attitude_stream)
+
                 except pickle.UnpicklingError as e:
                     raise ValueError(f"Failed to deserialize received data: {str(e)}")
                     

@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 from ImProc_Detect_funcs import ImageProcessor
 from signalrcore.hub_connection_builder import HubConnectionBuilder
-import time
-import requests
 import logging
 from GlobalVars import *
 
@@ -17,8 +15,8 @@ class ImProc_Detect:
         self.R_thresh = 120
         self.B_thresh = 230
         self.contour_area = 50
-        self.gps_position = np.array([])
-        self.uav_attitude = np.array([])
+        self.gps_position = np.array([0, 0, 0])
+        self.uav_attitude = np.array([0, 0, 0])
         
         self.PLATFORM_CONNECTION_URL = "http://127.0.0.1:5001"
         self.USERNAME = "Admin"
@@ -164,7 +162,7 @@ class ImProc_Detect:
             global_vars.og_image_to_transmit = original_frame
             global_vars.image_to_transmit = frame
 
-            print(self.gps_position)
+            # print(self.gps_position)
 
             if self.gps_position.size > 0 and self.uav_attitude.size > 0:
                 global_vars.gps_position = self.gps_position

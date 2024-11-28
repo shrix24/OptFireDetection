@@ -6,7 +6,7 @@ from Classifier_Processing import Window_Wavelet_Features
 from sklearn.cluster import DBSCAN
 import logging
 from signalrcore.hub_connection_builder import HubConnectionBuilder
-
+from GlobalVars import global_vars
 class Classifier_Detect:
     def __init__(self) -> None:
         self.LGBM_Model = joblib.load(r"C:\development\XPrizev2\LGBM_Wavelet_Parameters")
@@ -28,26 +28,26 @@ class Classifier_Detect:
         # self.token = "Bearer " + self.response.json()["token"] # important to add 'Bearer' to the start of the token here
         # print("Got Token: " + self.token)
 
-        print("Setting up service handler")
+        # print("Setting up service handler")
         self.handler = logging.StreamHandler()
         logging.disable() # disable it by default... it's verbose!
 
-        print("Building Connection to Platform Control")
-        self.hub_connection = HubConnectionBuilder().with_url(self.PLATFORM_CONNECTION_URL + "/autopilotHub").configure_logging(logging.DEBUG, socket_trace=True, handler=self.handler).build()
+        # print("Building Connection to Platform Control")
+        global_vars.hub_connection = HubConnectionBuilder().with_url(self.PLATFORM_CONNECTION_URL + "/autopilotHub").configure_logging(logging.DEBUG, socket_trace=True, handler=self.handler).build()
 
-        print("Signing up to open, close and error events")
+        # print("Signing up to open, close and error events")
         # sign up to start stop and error events
-        self.hub_connection.on_open(self.onOpen)
-        self.hub_connection.on_close(self.onClose)
-        self.hub_connection.on_error(self.onError)
+        global_vars.hub_connection.on_open(self.onOpen)
+        global_vars.hub_connection.on_close(self.onClose)
+        global_vars.hub_connection.on_error(self.onError)
 
-        print("Signing up to location and attitude broadcasting")
-        self.hub_connection.on("BroadcastLocation", self.handleLocation)
-        self.hub_connection.on("BroadcastAttitude", self.handleAttitude)
+        # print("Signing up to location and attitude broadcasting")
+        global_vars.hub_connection.on("BroadcastLocation", self.handleLocation)
+        global_vars.hub_connection.on("BroadcastAttitude", self.handleAttitude)
 
-        print("Starting Connection")
+        # print("Starting Connection")
         # start connection
-        self.hub_connection.start()
+        global_vars.hub_connection.start()
 
     def handleHeartbeat(self, data):
         print(data[0])
@@ -58,18 +58,20 @@ class Classifier_Detect:
 
         # location is sent as a dictionary and can be accessed as shown (same system for other variables)
         # example assignment to variable inside location structure
-        altitudeM_AMSL = data['data']['altM']
-        Latitude = data['data']['latDeg']
-        Longitude = data['data']['lngDeg']
 
-        self.gps_position = np.array[Latitude, Longitude, altitudeM_AMSL]
+        altitudeM_AMSL = data[0]['data']['altM']
+        Latitude = data[0]['data']['latDeg']
+        Longitude = data[0]['data']['lngDeg']
+
+        self.gps_position = np.array([Latitude, Longitude, altitudeM_AMSL])
         # be aware that in python if you want to assign a variable outside the scope of the function you must declare it as 'global'
     
     def handleAttitude(self, data):
         # print(data)
-        roll = data['data']['rollDeg']
-        yaw = data['data']['yawDeg']
-        pitch = data['data']['pitchDeg']
+        roll = data[0]['data']['rollDeg']
+        yaw = data[0]['data']['yawDeg']
+        pitch = data[0]['data']['pitchDeg']
+
         self.uav_attitude = np.array([roll, yaw, pitch])
         # Attitude is in degrees
 
@@ -99,18 +101,22 @@ class Classifier_Detect:
         idx = np.where(test_preds==0)
         zero_idx = list(zip(idx[0], idx[1]))
         zero_idx = np.array(zero_idx)
-        centroid_coordinates = np.zeros(zero_idx.shape)
 
+        if zero_idx.size == 0:
+            return np.array([])
+        
+        centroid_coordinates = np.zeros(zero_idx.shape)
+        
         for i in range(zero_idx.shape[0]):
             if zero_idx[i, 0] == 0:
-                x_f = 0 + 0.5*self.bsize
+                x_f = 0 + 1.5*(self.bsize)
             else:
-                x_f = 0 + zero_idx[i, 0]*self.bsize + 0.5*self.bsize
+                x_f = 0 + zero_idx[i, 0]*(self.bsize) + 1.5*self.bsize
 
             if zero_idx[i, 1] == 0:
-                y_f = 0 + 0.5*self.bsize
+                y_f = 0 + 1.5*(self.bsize)
             else:
-                y_f = 0 + zero_idx[i, 1]*self.bsize + 0.5*self.bsize
+                y_f = 0 + zero_idx[i, 1]*(self.bsize) + 1.5*self.bsize
 
             centroid_coordinates[i, 0] = y_f
             centroid_coordinates[i, 1] = x_f
@@ -118,6 +124,9 @@ class Classifier_Detect:
         return centroid_coordinates
 
     def outlier_rejection(self, centroid_coordinates, epsilon, DBSCAN):
+        if centroid_coordinates.size == 0:
+            return np.array([])
+        
         dbscan = DBSCAN(eps=epsilon, min_samples=2)
         labels = dbscan.fit_predict(centroid_coordinates)
 
@@ -147,19 +156,35 @@ class Classifier_Detect:
                 centroid_coordinates = self.outlier_rejection(centroid_coordinates, self.bsize, DBSCAN)
 
                 if centroid_coordinates.size != 0:
-                    x_max = int(np.max(centroid_coordinates[:, 0]))
-                    x_min = int(np.min(centroid_coordinates[:, 0]))
-                    y_max = int(np.max(centroid_coordinates[:, 1]))
-                    y_min = int(np.min(centroid_coordinates[:, 1]))
+                    if centroid_coordinates.size == 2:
+                        x_max = int(np.max(centroid_coordinates[:, 0]))
+                        x_min = int(np.min(centroid_coordinates[:, 0]))
+                        y_max = int(np.max(centroid_coordinates[:, 1]))
+                        y_min = int(np.min(centroid_coordinates[:, 1]))
 
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-                    img_coords = ((x_max+x_min)/2, (y_max+y_min)/2)
-                    self.img_coords = img_coords
+                        cv2.rectangle(frame, (x_min-0.5*self.bsize, y_min-0.5*self.bsize), (x_max+0.5*self.bsize, y_max+0.5*self.bsize), (0, 255, 0), 2)
+                        img_coords = ((x_max+x_min)/2, (y_max+y_min)/2)
+                        global_vars.img_coords = img_coords
+                    
+                    else:      
+                        x_max = int(np.max(centroid_coordinates[:, 0]))
+                        x_min = int(np.min(centroid_coordinates[:, 0]))
+                        y_max = int(np.max(centroid_coordinates[:, 1]))
+                        y_min = int(np.min(centroid_coordinates[:, 1]))
+
+                        cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                        img_coords = ((x_max+x_min)/2, (y_max+y_min)/2)
+                        global_vars.img_coords = img_coords
+
                 else:
-                    self.img_coords = np.array([0, 0])
+                    global_vars.img_coords = np.array([0, 0])
 
-                self.og_image_to_transmit = original_frame
-                self.image_to_transmit = frame
+                global_vars.og_image_to_transmit = original_frame
+                global_vars.image_to_transmit = frame
+
+                if self.gps_position.size > 0 and self.uav_attitude.size > 0:
+                    global_vars.gps_position = self.gps_position
+                    global_vars.uav_attitude = self.uav_attitude
 
             self.frame_count += 1
         

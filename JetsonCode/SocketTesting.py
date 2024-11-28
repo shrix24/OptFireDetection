@@ -1,15 +1,10 @@
 import socket
 import json
-import os
-import cv2
 import numpy as np
 import pickle
 import struct
-from pathlib import Path
 from GlobalVars import *
-from PIL import ImageGrab
 import time
-import msgpack
 
 
 def encode_numpy(obj):

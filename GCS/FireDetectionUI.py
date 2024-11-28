@@ -89,9 +89,6 @@ class LoginUIFirst(customtkinter.CTk):
         button = customtkinter.CTkButton(master=frame, text='Login', command=self.login)
         button.pack(pady=12, padx=10)
 
-    # def update(self):
-    #     app.after(1000, clock)
-
     def login(self):
         if self.user_entry.get() == self.username and self.user_pass.get() == self.password:
             tkmb.showinfo(title="Login Successful", message="You have logged in Successfully")
@@ -118,11 +115,6 @@ class FireControlPanel(customtkinter.CTk):
         self.reconnect_to_board = 0
         self.camera_res = (1920, 1080)
         self.FoV = (140, 110)
-
-        # # Initialize the task queue and worker thread
-        # self.task_queue = queue.Queue()
-        # self.worker_thread = threading.Thread(target=self.worker_function, daemon=True)
-        # self.worker_thread.start()
 
         self.resized_up = np.array([])
         self.resized_up_og = np.array([])
@@ -275,26 +267,6 @@ class FireControlPanel(customtkinter.CTk):
         self.arm_system_label = customtkinter.CTkButton(self.tabview.tab(self.tab_toggle), 140, 28, text="Disarmed", font=my_font,
                                                      fg_color="red", border_width=4, state="disabled")
         self.arm_system_label.grid(row=3, column=1, padx=(10, 10), pady=(10, 10), sticky="nsew")
-
-    # def sendOnBoard(self):
-    #     # Convert the dictionary to a JSON string
-    #     json_data = json.dumps(self.payload)
-    #     # Send the message to the server
-    #     self.client_socket.send(json_data.encode())
-    #     # print("\nData sent to server successfully")
-    #     self.success = self.client_socket.recv(1024).decode()
-    #     # print("\nServer response (success):", self.success)
-    #     self.data = self.client_socket.recv(1024).decode()
-    #     # print("\nServer response (data):", self.data)
-
-    # def close_worker_thread(self):
-    #     self.task_queue.put(None)  # Sentinel value to stop the worker thread
-    #     self.worker_thread.join()  # Wait for the thread to exit
-    #     print("Worker thread closed")
-
-    # def on_close(self):
-    #     self.close_worker_thread()
-    #     self.destroy()
     
     def start_update_function(self):
         try:
@@ -383,33 +355,31 @@ class FireControlPanel(customtkinter.CTk):
                 self.client_socket.send(json_data.encode())
                 self.success = self.client_socket.recv(1024).decode()
                 self.response = self.client_socket.recv(1024).decode()
-                # self.enqueued_sendOnBoard()
-                # self.sendOnBoard()
+
                 if self.success:
                     self.arm_system_label.configure(text="Armed", fg_color="green")
                 else:
                     print("Something went wrong...!")
-                # self.arm_system_label.configure(text="Armed", fg_color="green")
+
             elif self.algorithm_choice.get() == 2:
                 self.payload = {"data": "Classifier"}
                 json_data = json.dumps(self.payload)
                 self.client_socket.send(json_data.encode())
                 self.success = self.client_socket.recv(1024).decode()
                 self.response = self.client_socket.recv(1024).decode()
-                # self.enqueued_sendOnBoard()
-                # self.sendOnBoard()
+
                 if self.success:
                     self.arm_system_label.configure(text="Armed", fg_color="green")
                 else:
                     print("Something went wrong...!")
+
             elif self.algorithm_choice.get() == 3:
                 self.payload = {"data": "Yolo"}
                 json_data = json.dumps(self.payload)
                 self.client_socket.send(json_data.encode())
                 self.success = self.client_socket.recv(1024).decode()
                 self.response = self.client_socket.recv(1024).decode()
-                # self.enqueued_sendOnBoard()
-                # self.sendOnBoard()
+
                 if self.success:
                     self.arm_system_label.configure(text="Armed", fg_color="green")
                 else:
@@ -427,11 +397,9 @@ class FireControlPanel(customtkinter.CTk):
         self.client_socket.send(json_data.encode())
         self.success = self.client_socket.recv(1024).decode()
         self.response = self.client_socket.recv(1024).decode()
-        # self.enqueued_sendOnBoard()
-        # self.sendOnBoard()
+
         if self.success:
             tkmb.showinfo("Vision Module", "Vision Module is now active!")
-            # print(self.data)
             self.start_update = 1
         else:
             tkmb.showerror("Vision Module", "Error sending start command!")
@@ -454,7 +422,7 @@ class FireControlPanel(customtkinter.CTk):
             self.img_update_func.start()
             
     def coordinates(self):
-        if self.text_box_longtitude.get() != "" and self.text_box_lat != "":
+        if self.text_box_lon.get() != "" and self.text_box_lat != "":
             subject = 'Fire detection module'
             body = """ Fire detection latitude and longitude : Lat = {}, Lon = {}""".format(str(self.text_box_lat.get()),str(self.text_box_longtitude.get()))
             msg_user = "Coordinates send by email to " + email_receiver[0]
@@ -472,7 +440,7 @@ class FireControlPanel(customtkinter.CTk):
                 smtp.login(email_sender, email_password)
                 smtp.sendmail(email_sender, email_receiver, em.as_string())
         else:
-            messagebox.showwarning("Coordinates", "Something is wrong with the coordinates!")
+            messagebox.showwarning("Coordinates", "Coordinates field empty!")
 
     def connection_command(self):
         if self.switch_connection.get() == "off":
@@ -482,6 +450,7 @@ class FireControlPanel(customtkinter.CTk):
             if self.start_update == 1:
                 self.start_update = 0
                 self.reconnect_to_board = 1
+
         elif self.switch_connection.get() == "on":
             # Define the server's IP address and port
             if self.entry_ip.get() == "" and self.entry_port.get() == "":
@@ -491,6 +460,7 @@ class FireControlPanel(customtkinter.CTk):
 
                 # Create a socket to connect to the server
                 self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
             elif self.entry_ip.get() == "" and self.entry_port.get() != "":
                 messagebox.showwarning("Connection Warning", "Connecting to localhost:{}".format(self.entry_port.get()))
                 server_ip = '127.0.0.1'  # Change this to the server's IP
@@ -498,6 +468,7 @@ class FireControlPanel(customtkinter.CTk):
 
                 # Create a socket to connect to the server
                 self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
             elif self.entry_ip.get() != "" and self.entry_port.get() == "":
                 messagebox.showwarning("Connection Warning", "Connecting to {}:8080".format(self.entry_ip.get()))
                 server_ip = self.entry_ip.get()  # Change this to the server's IP
@@ -505,6 +476,7 @@ class FireControlPanel(customtkinter.CTk):
 
                 # Create a socket to connect to the server
                 self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                
             else:
                 messagebox.showwarning("Connection Warning", "Connecting to {}:{}".format(self.entry_ip.get(),self.entry_port.get()))
                 server_ip = self.entry_ip.get()  # Change this to the server's IP

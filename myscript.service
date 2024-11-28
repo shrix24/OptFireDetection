@@ -1,5 +1,5 @@
 [Unit]
-Description= Vision-Based Navigation System
+Description= Vision-Based Fire Detection System
 After=network.target
 
 [Service]

@@ -1,0 +1,11 @@
+[Unit]
+Description= Vision-Based Navigation System
+After=network.target
+
+[Service]
+ExecStart=/path/to/your/startup.sh
+Restart=always
+User=username
+
+[Install]
+WantedBy=multi-user.target

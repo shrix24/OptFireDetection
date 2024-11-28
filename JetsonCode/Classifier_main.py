@@ -7,6 +7,7 @@ from sklearn.cluster import DBSCAN
 import logging
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 from GlobalVars import global_vars
+
 class Classifier_Detect:
     def __init__(self) -> None:
         self.LGBM_Model = joblib.load(r"C:\development\XPrizev2\LGBM_Wavelet_Parameters")

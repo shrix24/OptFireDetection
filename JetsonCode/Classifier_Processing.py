@@ -4,21 +4,6 @@ import pywt
 from scipy.stats import skew, kurtosis
 
 
-class GaborParams:
-    def __init__(self, ksize, sigma, gamma, psi, lambd) -> None:
-        self.ksize = ksize
-        self.sigma = sigma
-        self.gamma = gamma
-        self.psi = psi
-        self.lambd = lambd
-
-    def __repr__(self) -> str:
-        return {f"Kernel size is:({self.ksize}, {self.ksize})",
-                f"Sigma (std. deviation) is: {self.sigma}",
-                f"Gamma (aspect ratio) is: {self.gamma}",
-                f"Psi (orientation offset) is: {self.psi}",
-                f"Lambda (wavelength of sine component) is: {self.lambd}"}
-
 class WindowClassifier_Features:
     def __init__(self, dataset, GaborParams) -> None:
         self.dataset = dataset

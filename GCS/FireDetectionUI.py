@@ -519,12 +519,6 @@ class FireControlPanel(customtkinter.CTk):
             if self.reconnect_to_board:
                 self.start_update = 1
 
-    def decode_numpy(obj):
-        if "__ndarray__" in obj:
-            # Reconstruct NumPy array from metadata
-            return np.frombuffer(obj["data"], dtype=obj["dtype"]).reshape(obj["shape"])
-        return obj
-
     def image_update(self):  
         self.image_request()
         self.after(1000, self.image_update)

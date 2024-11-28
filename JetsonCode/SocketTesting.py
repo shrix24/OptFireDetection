@@ -7,17 +7,6 @@ from GlobalVars import *
 import time
 
 
-def encode_numpy(obj):
-    if isinstance(obj, np.ndarray):
-        # Convert NumPy array to dictionary with metadata
-        return {
-            "__ndarray__": True,
-            "data": obj.tobytes(),
-            "dtype": str(obj.dtype),
-            "shape": obj.shape,
-        }
-    raise TypeError(f"Type {type(obj)} is not serializable")
-
 def socket_listener_main():
     global global_vars
     while global_vars.flag_socket_toggle:

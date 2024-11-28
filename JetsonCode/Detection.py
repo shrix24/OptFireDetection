@@ -1,7 +1,6 @@
 from Classifier_main import Classifier_Detect
 from ImProc_Detect_main import ImProc_Detect
 from Yolo_main import YOLO_Detect
-from GlobalVars import global_vars
 
 class Detector:
     def __init__(self, algorithm_choice) -> None:
